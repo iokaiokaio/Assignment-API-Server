@@ -1,5 +1,4 @@
 import express from 'express'
-import { v4 as uuidv4 } from 'uuid'
 import { getTodos, getTodoById, createTodo, updateTodo, deleteTodo, getTodosbyState } from '../services/todos.js'
 
 const router = express.Router()
@@ -31,9 +30,9 @@ router.get('/todos/:id', (req, res) => {
   }
 })
 
-router.post('/todos', (req, res) => { 
-  
-  res.json(createTodo)
+router.post('/todos', (req, res) => {
+  const todo = createTodo(req.body.title, req.body.description)
+  res.status(201).json(todo)
 })
 
 router.put('/todos/:id', (req, res) => {

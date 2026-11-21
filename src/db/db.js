@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid'
+
 var todos = [
   {
     "id": uuidv4(),
@@ -8,3 +10,5 @@ var todos = [
     "modifiedAt": Date.now()
   }
 ]
+
+export { todos }
