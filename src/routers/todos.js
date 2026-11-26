@@ -1,11 +1,30 @@
 import express from 'express'
-import { getTodos, getTodoById, createTodo, updateTodo, deleteTodo, getTodosbyState } from '../services/todos.js'
+import { getTodos, getTodoById, createTodo, updateTodo, deleteTodo, getTodosbyState, toCsv } from '../services/todos.js'
 
 const router = express.Router()
-
+const todoStates = ['todo', 'doing', 'done']
 
 router.get('/todos', (req, res) => {
-  res.json(getTodos())
+  const { state } = req.query
+  let todos = getTodos()
+
+  if (state !== undefined) {
+    if (!todoStates.includes(state)) {
+      return res.status(400).json({ error: 'Invalid state query parameter' })
+    }
+    todos = getTodosbyState(state)
+  }
+
+  const format = req.accepts(['application/json', 'text/csv'])
+  res.vary('Accept')
+
+  if (format === 'text/csv') {
+    return res.type('text/csv').send(toCsv(todos))
+  }
+  if (format === 'application/json') {
+    return res.json(todos)
+  }
+  return res.status(406).json({ error: 'Not acceptable' })
 })
 
 router.get('/', (req, res) => {
@@ -16,7 +35,7 @@ router.get('/todos/state', (req, res) => {
   if (!req.query.state) {
     return res.status(400).json({"error": "Missing state query parameter"})
   }
-  if (req.query.state !== 'todo' && req.query.state !== 'doing' && req.query.state !== 'done') {
+  if (!todoStates.includes(req.query.state)) {
     return res.status(400).json({"error": "Invalid state query parameter"})
   }
   res.json(getTodosbyState(req.query.state))

@@ -38,6 +38,45 @@ describe('GET /todos', () => {
     assert.ok(Array.isArray(response.body))
     assert.ok(response.body.some(todo => todo.title === 'Study REST APIs'))
   })
+
+  test('returns filtered CSV when the client requests text/csv', async () => {
+    const created = await createTodo('Task, "quoted"')
+    await request(app)
+      .put(`/todos/${created.body.id}`)
+      .send({
+        title: created.body.title,
+        description: created.body.description,
+        state: 'done'
+      })
+      .expect(200)
+
+    const response = await request(app)
+      .get('/todos')
+      .query({ state: 'done' })
+      .set('Accept', 'text/csv')
+      .expect('Content-Type', /text\/csv/i)
+      .expect(200)
+
+    assert.ok(response.text.startsWith('id,title,description,state,createdAt,modifiedAt\r\n'))
+    assert.ok(response.text.includes('"Task, ""quoted"""'))
+    assert.ok(response.text.includes(',done,'))
+    assert.ok(!response.text.includes('Study REST APIs'))
+  })
+
+  test('responds with 400 for an invalid state filter', async () => {
+    await request(app)
+      .get('/todos')
+      .query({ state: 'invalid' })
+      .set('Accept', 'text/csv')
+      .expect(400)
+  })
+
+  test('responds with 406 when no supported response format is accepted', async () => {
+    await request(app)
+      .get('/todos')
+      .set('Accept', 'application/xml')
+      .expect(406)
+  })
 })
 
 describe('GET /todos/:id', () => {

@@ -14,6 +14,23 @@ export function getTodosbyState(state) {
   return todos.filter(todo => todo.state === state)
 }
 
+export function toCsv(todos) {
+  const escapeText = value => `"${String(value ?? '').replaceAll('"', '""')}"`
+  const rows = [
+    ['id', 'title', 'description', 'state', 'createdAt', 'modifiedAt'],
+    ...todos.map(todo => [
+      todo.id,
+      escapeText(todo.title),
+      escapeText(todo.description),
+      todo.state,
+      todo.createdAt,
+      todo.modifiedAt
+    ])
+  ]
+
+  return rows.map(row => row.join(',')).join('\r\n')
+}
+
 export function createTodo(title, description) {
   const newTodo = {
     "id": uuidv4(),

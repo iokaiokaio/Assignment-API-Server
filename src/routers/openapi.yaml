@@ -1,0 +1,267 @@
+openapi: 3.0.3
+info:
+  title: Todo API
+  version: 1.0.0
+  description: API for creating and managing todos.
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+tags:
+  - name: Todos
+    description: Todo management
+paths:
+  /:
+    get:
+      summary: Check server status
+      responses:
+        '200':
+          description: The server is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: running
+  /todos:
+    get:
+      tags:
+        - Todos
+      summary: List todos, optionally filtered by state
+      parameters:
+        - name: state
+          in: query
+          required: false
+          description: State to filter by
+          schema:
+            type: string
+            enum:
+              - todo
+              - doing
+              - done
+      responses:
+        '200':
+          description: A list of todos in the requested format
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Todo'
+            text/csv:
+              schema:
+                type: string
+              example: |-
+                id,title,description,state,createdAt,modifiedAt
+                7ba70388-2eca-427d-b5d9-8a4670b57f04,"Finish the assignment","Document the todo API",done,1730000000000,1730000000000
+        '400':
+          description: The state parameter is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '406':
+          description: The requested response format is not supported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+        - Todos
+      summary: Create a todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTodo'
+            example:
+              title: Finish the assignment
+              description: Document the todo API
+      responses:
+        '201':
+          description: The created todo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+  /todos/state:
+    get:
+      tags:
+        - Todos
+      summary: List todos by state
+      parameters:
+        - name: state
+          in: query
+          required: true
+          description: State to filter by
+          schema:
+            type: string
+            enum:
+              - todo
+              - doing
+              - done
+      responses:
+        '200':
+          description: Todos matching the requested state
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Todo'
+        '400':
+          description: The state parameter is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/todos/{id}':
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Todo UUID
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Todos
+      summary: Get a todo by ID
+      responses:
+        '200':
+          description: The requested todo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - Todos
+      summary: Replace a todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTodo'
+            example:
+              title: Finish the assignment
+              description: The API is documented
+              state: doing
+      responses:
+        '200':
+          description: The updated todo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Todos
+      summary: Delete a todo
+      responses:
+        '200':
+          description: Todo deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Todo deleted
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Todo:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - state
+        - createdAt
+        - modifiedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        state:
+          type: string
+          enum:
+            - todo
+            - doing
+            - done
+        createdAt:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds
+        modifiedAt:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds
+      example:
+        id: 7ba70388-2eca-427d-b5d9-8a4670b57f04
+        title: Finish the assignment
+        description: Document the todo API
+        state: todo
+        createdAt: 1730000000000
+        modifiedAt: 1730000000000
+    CreateTodo:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+    UpdateTodo:
+      type: object
+      required:
+        - title
+        - description
+        - state
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        state:
+          type: string
+          enum:
+            - todo
+            - doing
+            - done
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Todo not found
